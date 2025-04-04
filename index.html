@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PromoBox</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    .section { margin-bottom: 30px; }
+    input, textarea { width: 100%; margin: 5px 0 15px 0; padding: 10px; }
+    button { padding: 10px 20px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h1>PromoBox</h1>
+  <div class="section">
+    <button onclick="showSeller()">Я продавец</button>
+    <button onclick="showBlogger()">Я блогер</button>
+  </div>
+
+  <div id="sellerForm" class="section hidden">
+    <h2>Разместить товар</h2>
+    <input id="productName" placeholder="Название товара" />
+    <textarea id="productDescription" placeholder="Описание товара"></textarea>
+    <input id="coupangURL" placeholder="Ссылка на товар на Coupang" />
+    <input id="photoURL" placeholder="Ссылка на фото товара" />
+    <input id="productConditions" placeholder="Условия для блогера" />
+    <button onclick="submitProduct()">Разместить</button>
+  </div>
+
+  <div id="bloggerCatalog" class="section hidden">
+    <h2>Каталог товаров</h2>
+    <div id="productList"></div>
+  </div>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbxR5AMqEmle7hq5rReeVhLecWDW9cBMfNniaZvGwUcYtt3sW4AyRHCl5z-6aoFmxjjS6w/exec";
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    
+    function showSeller() {
+      document.getElementById("sellerForm").classList.remove("hidden");
+      document.getElementById("bloggerCatalog").classList.add("hidden");
+    }
+
+    function showBlogger() {
+      document.getElementById("sellerForm").classList.add("hidden");
+      document.getElementById("bloggerCatalog").classList.remove("hidden");
+      fetchProducts();
+    }
+
+    function submitProduct() {
+      const body = {
+        type: "addProduct",
+        name: document.getElementById("productName").value,
+        description: document.getElementById("productDescription").value,
+        marketplaceURL: document.getElementById("coupangURL").value,
+        imageURL: document.getElementById("photoURL").value,
+        conditions: document.getElementById("productConditions").value,
+        telegramID: tg.initDataUnsafe.user.id,
+        ownerName: tg.initDataUnsafe.user.first_name
+      };
+      fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify(body)
+      }).then(r => alert("Товар размещён"));
+    }
+
+    function fetchProducts() {
+      fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ type: "getProducts" })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const list = document.getElementById("productList");
+        list.innerHTML = "";
+        data.forEach(p => {
+          const item = document.createElement("div");
+          item.innerHTML = `
+            <h3>${p.name}</h3>
+            <img src="${p.imageURL}" alt="фото" style="max-width:100%;" />
+            <p>${p.description}</p>
+            <p><b>Условия:</b> ${p.conditions}</p>
+            <a href="${p.marketplaceURL}" target="_blank">Ссылка на товар</a>
+            <hr/>
+          `;
+          list.appendChild(item);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
